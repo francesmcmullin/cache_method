@@ -1,6 +1,8 @@
+require 'delayed_job'
+
 module CacheMethod
   class CachedResult #:nodoc: all
-    def initialize(obj, method_id, original_method_id, ttl, args, &blk)
+    def initialize(obj, method_id, original_method_id, ttl, args, async, &blk)
       @obj = obj
       @method_id = method_id
       @method_signature = CacheMethod.method_signature obj, method_id
@@ -10,6 +12,7 @@ module CacheMethod
       @args_digest = args.empty? ? 'empty' : CacheMethod.digest(args)
       @blk = blk
       @fetch_mutex = ::Mutex.new
+      @async = async
     end
 
     attr_reader :obj
@@ -20,23 +23,32 @@ module CacheMethod
     attr_reader :args_digest
     attr_reader :blk
     attr_reader :ttl
+    attr_reader :async
     
     # Store things wrapped in an Array so that nil is accepted
     def fetch
-      if wrapped_v = get_wrapped
-        wrapped_v.first
+      wrapped_v = get_wrapped
+      if wrapped_v[1] > DateTime.now
+        return wrapped_v[0]
       else
         if @fetch_mutex.try_lock
           # i got the lock, so don't bother trying to get first
           begin
-            set_wrapped.first
+            wrapped_v[1] = DateTime.now + ttl.seconds # in the meantime make sure no other process tries to execute it
+            CacheMethod.config.storage.set cache_key, wrapped_v, 0
+            if @async
+                self.delay.set_wrapped #enqueue the refresh job                
+            else 
+                wrapped_v = set_wrapped
+            end            
+            wrapped_v[0]
           ensure
             @fetch_mutex.unlock
           end
         else
           # i didn't get the lock, so get in line, and do try to get first
           @fetch_mutex.synchronize do
-            (get_wrapped || set_wrapped).first
+            get_wrapped.try(:first)
           end
         end
       end
@@ -63,14 +75,21 @@ module CacheMethod
     end
 
     def get_wrapped
-      CacheMethod.config.storage.get cache_key
+      wrapped_v = CacheMethod.config.storage.get(cache_key) || [nil, DateTime.now]
+      if wrapped_v[1] + ttl.seconds > DateTime.now
+        wrapped_v
+      else
+        [nil,DateTime.now]
+      end 
     end
 
     def set_wrapped
+      logger.debug "setting wrapped"
       v = obj.send(*([original_method_id]+args), &blk)
-      wrapped_v = [v]
-      CacheMethod.config.storage.set cache_key, wrapped_v, ttl
+      wrapped_v = [v, DateTime.now + ttl.seconds]
+      CacheMethod.config.storage.set cache_key, wrapped_v, 0
       wrapped_v
     end
+
   end
 end
