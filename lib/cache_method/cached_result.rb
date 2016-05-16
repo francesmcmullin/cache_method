@@ -77,11 +77,12 @@ module CacheMethod
 
     def get_wrapped
       wrapped_v = CacheMethod.config.storage.get(cache_key) || [@default, DateTime.now]
-      if wrapped_v[1] + ttl.seconds > DateTime.now
-        wrapped_v
-      else
-        [@default, DateTime.now]
-      end 
+      wrapped_v
+      # if wrapped_v[1] > DateTime.now
+      #   wrapped_v
+      # else
+      #   [@default, DateTime.now]
+      # end 
     end
 
     def set_wrapped
