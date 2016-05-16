@@ -2,12 +2,13 @@ require 'delayed_job'
 
 module CacheMethod
   class CachedResult #:nodoc: all
-    def initialize(obj, method_id, original_method_id, ttl, args, async, &blk)
+    def initialize(obj, method_id, original_method_id, ttl, default, args, async, &blk)
       @obj = obj
       @method_id = method_id
       @method_signature = CacheMethod.method_signature obj, method_id
       @original_method_id = original_method_id
       @ttl = ttl || CacheMethod.config.default_ttl
+      @default = default
       @args = args
       @args_digest = args.empty? ? 'empty' : CacheMethod.digest(args)
       @blk = blk
@@ -75,11 +76,11 @@ module CacheMethod
     end
 
     def get_wrapped
-      wrapped_v = CacheMethod.config.storage.get(cache_key) || [nil, DateTime.now]
+      wrapped_v = CacheMethod.config.storage.get(cache_key) || [@default, DateTime.now]
       if wrapped_v[1] + ttl.seconds > DateTime.now
         wrapped_v
       else
-        [nil,DateTime.now]
+        [@default, DateTime.now]
       end 
     end
 

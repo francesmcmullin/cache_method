@@ -96,15 +96,15 @@ module CacheMethod
       original_method_id = "_cache_method_#{method_id}"
       alias_method original_method_id, method_id
       define_method method_id do |*args, &blk|
-        ::CacheMethod::CachedResult.new(self, method_id, original_method_id, ttl, args, false, &blk).fetch
+        ::CacheMethod::CachedResult.new(self, method_id, original_method_id, ttl, args, nil, false, &blk).fetch
       end
     end
 
-    def cache_method_async(method_id, ttl = nil)
+    def cache_method_async(method_id, ttl = nil, default = nil)
       original_method_id = "_cache_method_#{method_id}"
       alias_method original_method_id, method_id
       define_method method_id do |*args, &blk|
-        ::CacheMethod::CachedResult.new(self, method_id, original_method_id, ttl, args, true, &blk).fetch
+        ::CacheMethod::CachedResult.new(self, method_id, original_method_id, ttl, default, args, true, &blk).fetch
       end
     end
 
