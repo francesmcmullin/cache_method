@@ -1,4 +1,5 @@
-require 'delayed_job'
+require 'sidekiq'
+require 'sidekiq/extensions/class_methods'
 
 module CacheMethod
   class CachedResult #:nodoc: all
@@ -25,7 +26,9 @@ module CacheMethod
     attr_reader :blk
     attr_reader :ttl
     attr_reader :async
-    
+
+    include Sidekiq::Extensions::Klass
+
     # Store things wrapped in an Array so that nil is accepted
     def fetch
       wrapped_v = get_wrapped
@@ -38,10 +41,10 @@ module CacheMethod
             wrapped_v[1] = DateTime.now + ttl.seconds # in the meantime make sure no other process tries to execute it
             CacheMethod.config.storage.set cache_key, wrapped_v, 0
             if @async
-                self.delay.set_wrapped #enqueue the refresh job                
-            else 
+                self.delay.set_wrapped #enqueue the refresh job
+            else
                 wrapped_v = set_wrapped
-            end            
+            end
             wrapped_v[0]
           ensure
             @fetch_mutex.unlock
@@ -58,7 +61,7 @@ module CacheMethod
     def exist?
       CacheMethod.config.storage.exist?(cache_key)
     end
-        
+
     private
 
     def cache_key
@@ -82,11 +85,10 @@ module CacheMethod
       #   wrapped_v
       # else
       #   [@default, DateTime.now]
-      # end 
+      # end
     end
 
     def set_wrapped
-      logger.debug "setting wrapped"
       v = obj.send(*([original_method_id]+args), &blk)
       wrapped_v = [v, DateTime.now + ttl.seconds]
       CacheMethod.config.storage.set cache_key, wrapped_v, 0
