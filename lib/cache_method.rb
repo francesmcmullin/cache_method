@@ -5,6 +5,8 @@ require 'cache_method/config'
 require 'cache_method/cached_result'
 require 'cache_method/generation'
 
+require 'sidekiq/extensions/class_methods'
+
 module CacheMethod
   MUTEX = ::Mutex.new
   CACHE_KEY_JOINER = ','
