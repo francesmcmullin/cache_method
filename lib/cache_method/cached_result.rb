@@ -7,6 +7,7 @@ module CacheMethod
       @obj = obj
       @method_id = method_id
       @method_signature = CacheMethod.method_signature obj, method_id
+      @name = @method_signature
       @original_method_id = original_method_id
       @ttl = ttl || CacheMethod.config.default_ttl
       @default = default
@@ -20,6 +21,7 @@ module CacheMethod
     attr_reader :obj
     attr_reader :method_id
     attr_reader :method_signature
+    attr_reader :name
     attr_reader :original_method_id
     attr_reader :args
     attr_reader :args_digest
