@@ -1,5 +1,7 @@
 # cache_method
 
+Forked from https://github.com/seamusabshere/cache_method
+
 It's like `alias_method`, but it's `cache_method`!
 
 Lets you cache the results of calling methods given their arguments. Like memoization, but stored in Memcached, Redis, etc. so that the cached results can be shared between processes and hosts.
