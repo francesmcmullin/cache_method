@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   
   s.add_runtime_dependency 'cache', '>=0.2.1'
+  s.add_runtime_dependency 'sidekiq-delay_extensions'
 
   s.add_development_dependency 'activesupport'
   s.add_development_dependency 'dalli'

@@ -1,5 +1,6 @@
 require 'sidekiq'
-require 'sidekiq/extensions/class_methods'
+require 'sidekiq/delay_extensions/generic_job'
+require 'sidekiq/delay_extensions/class_methods'
 
 module CacheMethod
   class CachedResult #:nodoc: all
@@ -29,7 +30,7 @@ module CacheMethod
     attr_reader :ttl
     attr_reader :async
 
-    include Sidekiq::Extensions::Klass
+    include Sidekiq::DelayExtensions::Klass
 
     # Store things wrapped in an Array so that nil is accepted
     def fetch
