@@ -75,7 +75,7 @@ module CacheMethod
     end
 
     def cache_method_cached?(method_id, *args)
-      ::CacheMethod::CachedResult.new(self, method_id, nil, nil, args, true).exist?
+      ::CacheMethod::CachedResult.new(self, method_id, nil, nil, nil, args, true).exist?
     end
   end
 
